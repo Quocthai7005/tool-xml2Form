@@ -1,0 +1,24 @@
+fieldset {
+	font: 1em Verdana, Geneva, sans-serif;
+	border: thin solid #595959;
+	border-radius: 5px;
+}
+
+legend {
+	color: #FFF;
+	background: #595959;
+	border-radius: 3px;
+	font-size: 1em;
+	padding: 3px 6px 5px 6px;
+}
+
+.atts {
+	padding: 5px;
+	border-radius: 5px;
+	background: #edeaea;
+}
+
+.field, .attrField {
+	width: 500px;
+	margin: 10px 0 10px 20px
+}
