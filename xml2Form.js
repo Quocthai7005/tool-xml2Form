@@ -1,5 +1,21 @@
 autoGenId = 0;
+legendAutoGenId = 0;
+html = '';
 
+function addNewFieldSet(tagName, prevElement) {
+	var fieldsetNo = 'fieldsetNo_' +  legendAutoGenId;
+	var newElement = document.createElement("fieldset");
+	newElement.setAttribute("style", "margin: 10px 20px 10px 20px");
+	newElement.setAttribute("tagName", tagName);
+	newElement.setAttribute("id", fieldsetNo);
+	newElement.innerHTML = '<legend style="font-weight: bold">' + tagName + '</legend>' + '<div><button onclick="addNewFieldSet(\'' + "testtag\'" +", \'" + fieldsetNo +'\')">+</button><button onclick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button></div>';
+	document.getElementById(prevElement).after(newElement);
+	legendAutoGenId += 1;
+}
+
+function insertAfter(referenceNode, newNode) {
+	referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+}
 document.addEventListener("DOMContentLoaded", function(){
 	
 	var parser = new DOMParser();
@@ -22,29 +38,32 @@ document.addEventListener("DOMContentLoaded", function(){
 	});
 
 	function xml2Form(xmlDoc) {
-		var html = '';
 		if (xmlDoc.documentElement.childNodes.length > 0) {
 			xml_to_html(xmlDoc.documentElement);
 		}
+
 		function xml_to_html(xmlElem) {
 			if (!xmlElem) {
 				return;
 			}
+			legendAutoGenId += 1;
 			if (xmlElem.firstElementChild) {
-				html += '<fieldset style="margin: 10px 20px 10px 20px" tagName="' + xmlElem.nodeName + '"><legend style="font-weight: bold">' + xmlElem.nodeName + '</legend>';
+				var fieldsetNo = 'fieldsetNo_' +  legendAutoGenId;
+				html += '<fieldset id="' + fieldsetNo + '" contenteditable="true" style="margin: 10px 20px 10px 20px" tagName="' + xmlElem.nodeName + '"><legend style="font-weight: bold">' + xmlElem.nodeName + '</legend>';
 				var atts = xmlElem.attributes;
 				if (atts.length > 0) {
 					html += '<div class="atts">'
 					for (var att, i = 0, atts, n = atts.length; i < n; i++){
 						att = atts[i];
 						html += '<div class="attrField">'
-						html += '<label for="' + att.nodeName + '" style="padding-right: 10px">' + att.nodeName + '</label>';
-						html += '<input name="' + att.nodeName + '" value="'+ att.nodeValue + '">';
+						html += '<label contenteditable="true" for="' + att.nodeName + '" style="padding-right: 10px">' + att.nodeName + '</label>';
+						html += '<input name="' + att.nodeName + '" value="'+ att.nodeValue + '"></input>';
 						html += '</div>';
 					}
 					html += '</div>'
 				}
 				xml_to_html(xmlElem.firstElementChild);
+				html += '<div><button onclick="addNewFieldSet(\'' + "testtag\'" +", \'" + fieldsetNo +'\')">+</button><button onclick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button></div>';
 				html += '</fieldset>';
 				if (xmlElem.nextElementSibling) {
 					xml_to_html(xmlElem.nextElementSibling);
@@ -63,7 +82,8 @@ document.addEventListener("DOMContentLoaded", function(){
 		autoGenId += 1;
 		var input = '<div class="field" tagName="' + inputName + '">'
 					+ '<label for="inputNo_' + autoGenId + '" style="display: inline-block; width: 150px">' + inputName + '</label>'
-					+ '<input id="inputNo_' + autoGenId + '" style="float: right; width:300px" name="' + inputName + '" type="text" value="' + inputValue + '">'
+					+ '<input id="inputNo_' + autoGenId + '" style="width:200px" name="' + inputName + '" type="text" value="' + inputValue + '"></input>'
+					+'<button>+</button><button>-</button><button>(|)</button>'
 					+'</div>';
 		return input;
 	}
