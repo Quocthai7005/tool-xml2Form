@@ -8,9 +8,38 @@ function addNewFieldSet(tagName, prevElement) {
 	newElement.setAttribute("style", "margin: 10px 20px 10px 20px");
 	newElement.setAttribute("tagName", tagName);
 	newElement.setAttribute("id", fieldsetNo);
-	newElement.innerHTML = '<legend style="font-weight: bold">' + tagName + '</legend>' + '<div><button onclick="addNewFieldSet(\'' + "testtag\'" +", \'" + fieldsetNo +'\')">+</button><button onclick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button></div>';
-	document.getElementById(prevElement).after(newElement);
+	newElement.innerHTML = '<legend style="font-weight: bold">' + tagName + '</legend>' +
+		'<div><button onClick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button></div>' +
+		'<div>' +
+		'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) nested set</button>' +
+		'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) field</button>' +
+		'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) attribute</button>' +
+		'</div>';
+	document.getElementById(prevElement).appendChild(newElement);
 	legendAutoGenId += 1;
+}
+
+function removeField(elementId) {
+	var element = document.querySelector("div[field-id="+elementId+"]");
+	element.remove();
+}
+
+function addField(currentFieldSetId) {
+	autoGenId += 1;
+	var inputName = "changeMe";
+	var inputValue = "";
+	var inputId = 'inputNo_' + autoGenId;
+
+	var newElement = document.createElement("div");
+	newElement.setAttribute("style", "margin: 10px 20px 10px 20px");
+	newElement.setAttribute("id", inputId);
+	newElement.setAttribute("field-id", inputId);
+	newElement.innerHTML =
+		'<label for="' + inputId + '" style="display: inline-block; width: 150px">' + inputName + '</label>'
+		+ '<input id="' + inputId + '" style="width:200px" name="' + inputName + '" type="text" value="' + inputValue + '"></input>'
+		+'<button onClick="removeField(\''+inputId+'\')">-</button>';
+
+	document.getElementById(currentFieldSetId).appendChild(newElement);
 }
 
 function insertAfter(referenceNode, newNode) {
@@ -34,7 +63,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
 		var xmlDoc = parser.parseFromString(xml,'text/xml');
 		var xmlText = new XMLSerializer().serializeToString(xmlDoc);
-		document.getElementById('xmlResult').value = formatXML(xmlText, '	');
+		document.getElementById('xmlResult').value = formatXML(xmlText, '  ');
 	});
 
 	function xml2Form(xmlDoc) {
@@ -51,6 +80,14 @@ document.addEventListener("DOMContentLoaded", function(){
 				var fieldsetNo = 'fieldsetNo_' +  legendAutoGenId;
 				html += '<fieldset id="' + fieldsetNo + '" contenteditable="true" style="margin: 10px 20px 10px 20px" tagName="' + xmlElem.nodeName + '">' +
 					'<legend for="'+ fieldsetNo +'" style="font-weight: bold">' + xmlElem.nodeName + '</legend>';
+
+				html += '<div>' +
+					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) nested set</button>' +
+					'<button onclick="addField(\'' + fieldsetNo +'\')">(+) field</button>' +
+					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) attribute</button>' +
+					'<button onClick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button>' +
+					'</div>';
+
 				var atts = xmlElem.attributes;
 				if (atts.length > 0) {
 					html += '<div class="atts">'
@@ -64,14 +101,6 @@ document.addEventListener("DOMContentLoaded", function(){
 					html += '</div>'
 				}
 				xml_to_html(xmlElem.firstElementChild);
-				html += '<div>' +
-					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) nested set</button>' +
-					//'<button onclick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button>' +
-
-					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) field</button>' +
-					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) attribute</button>' +
-
-					'</div>';
 				html += '</fieldset>';
 				if (xmlElem.nextElementSibling) {
 					xml_to_html(xmlElem.nextElementSibling);
@@ -92,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function(){
 		var input = '<div class="field" field-id="'+ inputId +'" tagName="' + inputName + '">'
 					+ '<label for="' + inputId + '" style="display: inline-block; width: 150px">' + inputName + '</label>'
 					+ '<input id="' + inputId + '" style="width:200px" name="' + inputName + '" type="text" value="' + inputValue + '"></input>'
-					+'<button>-</button>'
+					+'<button onClick="removeField(\''+inputId+'\')">-</button>'
 					+'</div>';
 		return input;
 	}
