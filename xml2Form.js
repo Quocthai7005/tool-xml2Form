@@ -8,15 +8,22 @@ function addNewFieldSet(tagName, prevElement) {
 	newElement.setAttribute("style", "margin: 10px 20px 10px 20px");
 	newElement.setAttribute("tagName", tagName);
 	newElement.setAttribute("id", fieldsetNo);
-	newElement.innerHTML = '<legend style="font-weight: bold">' + tagName + '</legend>' +
-		'<div><button onClick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button></div>' +
+	newElement.setAttribute("class", "fieldset");
+	newElement.innerHTML = '<legend for="'+ fieldsetNo +'" style="font-weight: bold">' + tagName + '</legend>' +
 		'<div>' +
 		'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) nested set</button>' +
-		'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) field</button>' +
+		'<button onclick="addField(\'' + fieldsetNo +'\')">(+) field</button>' +
 		'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) attribute</button>' +
+		'<button onClick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button>' +
 		'</div>';
 	document.getElementById(prevElement).appendChild(newElement);
 	legendAutoGenId += 1;
+}
+
+function clear() {
+	autoGenId = 0;
+	legendAutoGenId = 0;
+	html = '';
 }
 
 function removeField(elementId) {
@@ -34,12 +41,17 @@ function addField(currentFieldSetId) {
 	newElement.setAttribute("style", "margin: 10px 20px 10px 20px");
 	newElement.setAttribute("id", inputId);
 	newElement.setAttribute("field-id", inputId);
+	newElement.setAttribute("class", "field");
 	newElement.innerHTML =
 		'<label for="' + inputId + '" style="display: inline-block; width: 150px">' + inputName + '</label>'
 		+ '<input id="' + inputId + '" style="width:200px" name="' + inputName + '" type="text" value="' + inputValue + '"></input>'
 		+'<button onClick="removeField(\''+inputId+'\')">-</button>';
 
 	document.getElementById(currentFieldSetId).appendChild(newElement);
+}
+
+function addAttribute(currentFieldSetId) {
+
 }
 
 function insertAfter(referenceNode, newNode) {
@@ -67,6 +79,8 @@ document.addEventListener("DOMContentLoaded", function(){
 	});
 
 	function xml2Form(xmlDoc) {
+		clear();
+
 		if (xmlDoc.documentElement.childNodes.length > 0) {
 			xml_to_html(xmlDoc.documentElement);
 		}
@@ -106,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function(){
 					xml_to_html(xmlElem.nextElementSibling);
 				}
 			} else {
-				html += generateInput(xmlElem.nodeName, xmlElem.innerHTML);
+				html += generateInput(xmlElem);
 				if (xmlElem.nextElementSibling) {
 					xml_to_html(xmlElem.nextElementSibling);
 				}
@@ -115,7 +129,9 @@ document.addEventListener("DOMContentLoaded", function(){
 		return html;
 	}
 
-	function generateInput(inputName, inputValue) {
+	function generateInput(xmlElem) {
+		var inputValue = xmlElem.innerHTML;
+		var inputName = xmlElem.nodeName;
 		autoGenId += 1;
 		var inputId = 'inputNo_' + autoGenId;
 		var input = '<div class="field" field-id="'+ inputId +'" tagName="' + inputName + '">'
@@ -123,6 +139,21 @@ document.addEventListener("DOMContentLoaded", function(){
 					+ '<input id="' + inputId + '" style="width:200px" name="' + inputName + '" type="text" value="' + inputValue + '"></input>'
 					+'<button onClick="removeField(\''+inputId+'\')">-</button>'
 					+'</div>';
+
+		var atts = xmlElem.attributes;
+		if (atts.length > 0) {
+			var attrhtml = '<div class="fieldAtts">'
+			for (var att, i = 0, atts, n = atts.length; i < n; i++){
+				att = atts[i];
+				attrhtml += '<div class="attrField">'
+				attrhtml += '<label contenteditable="true" for="' + att.nodeName + '" style="padding-right: 10px">' + att.nodeName + '</label>';
+				attrhtml += '<input name="' + att.nodeName + '" value="'+ att.nodeValue + '"></input>';
+				attrhtml += '</div>';
+			}
+			attrhtml += '</div>'
+			input += attrhtml;
+		}
+		input += '</div>';
 		return input;
 	}
 

@@ -1,24 +1,38 @@
 fieldset {
-	font: 1em Verdana, Geneva, sans-serif;
+	font: 14px Verdana, Geneva, sans-serif;
 	border: thin solid #595959;
 	border-radius: 5px;
 }
 
 legend {
-	color: #FFF;
-	background: #595959;
+	color: #ffffff !important;
+	background: #b06f6f;
 	border-radius: 3px;
-	font-size: 1em;
+	font-size: 16px !important;
 	padding: 3px 6px 5px 6px;
 }
 
 .atts {
-	padding: 5px;
+	padding: 1px;
 	border-radius: 5px;
 	background: #edeaea;
 }
 
 .field, .attrField {
 	width: 500px;
-	margin: 10px 0 10px 20px
+	margin: 2px 0 0px 20px !important;
+}
+
+.fieldAtts {
+	margin-left: 20px;
+	background-color: aliceblue;
+}
+button {
+	margin-right: 2px !important;
+	margin-left: 2px;
+	margin-bottom: 5px;
+}
+
+.container-fluid {
+	font-size: 14px !important;
 }
