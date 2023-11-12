@@ -49,7 +49,8 @@ document.addEventListener("DOMContentLoaded", function(){
 			legendAutoGenId += 1;
 			if (xmlElem.firstElementChild) {
 				var fieldsetNo = 'fieldsetNo_' +  legendAutoGenId;
-				html += '<fieldset id="' + fieldsetNo + '" contenteditable="true" style="margin: 10px 20px 10px 20px" tagName="' + xmlElem.nodeName + '"><legend style="font-weight: bold">' + xmlElem.nodeName + '</legend>';
+				html += '<fieldset id="' + fieldsetNo + '" contenteditable="true" style="margin: 10px 20px 10px 20px" tagName="' + xmlElem.nodeName + '">' +
+					'<legend for="'+ fieldsetNo +'" style="font-weight: bold">' + xmlElem.nodeName + '</legend>';
 				var atts = xmlElem.attributes;
 				if (atts.length > 0) {
 					html += '<div class="atts">'
@@ -63,7 +64,14 @@ document.addEventListener("DOMContentLoaded", function(){
 					html += '</div>'
 				}
 				xml_to_html(xmlElem.firstElementChild);
-				html += '<div><button onclick="addNewFieldSet(\'' + "testtag\'" +", \'" + fieldsetNo +'\')">+</button><button onclick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button></div>';
+				html += '<div>' +
+					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) nested set</button>' +
+					//'<button onclick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button>' +
+
+					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) field</button>' +
+					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) attribute</button>' +
+
+					'</div>';
 				html += '</fieldset>';
 				if (xmlElem.nextElementSibling) {
 					xml_to_html(xmlElem.nextElementSibling);
@@ -80,10 +88,11 @@ document.addEventListener("DOMContentLoaded", function(){
 
 	function generateInput(inputName, inputValue) {
 		autoGenId += 1;
-		var input = '<div class="field" tagName="' + inputName + '">'
-					+ '<label for="inputNo_' + autoGenId + '" style="display: inline-block; width: 150px">' + inputName + '</label>'
-					+ '<input id="inputNo_' + autoGenId + '" style="width:200px" name="' + inputName + '" type="text" value="' + inputValue + '"></input>'
-					+'<button>+</button><button>-</button><button>(|)</button>'
+		var inputId = 'inputNo_' + autoGenId;
+		var input = '<div class="field" field-id="'+ inputId +'" tagName="' + inputName + '">'
+					+ '<label for="' + inputId + '" style="display: inline-block; width: 150px">' + inputName + '</label>'
+					+ '<input id="' + inputId + '" style="width:200px" name="' + inputName + '" type="text" value="' + inputValue + '"></input>'
+					+'<button>-</button>'
 					+'</div>';
 		return input;
 	}
@@ -104,24 +113,29 @@ document.addEventListener("DOMContentLoaded", function(){
 					html_to_xml(htmlForm.nextElementSibling);
 					return;
 				}
+				var tagName = getTagName(htmlForm);
 
-				xml += '<' + htmlForm.getAttribute('tagName');
+				if (tagName != "") {
+					xml += '<' + tagName;
 
-				// get attributes list input of current element
-				var atts = null;
-				
-				if (htmlForm.firstElementChild) {
-					atts = htmlForm.firstElementChild.nextElementSibling;
+					// get attributes list input of current element
+					var atts = null;
+
+					if (htmlForm.firstElementChild) {
+						atts = htmlForm.firstElementChild.nextElementSibling;
+					}
+					if (atts && atts.getAttribute('class') == 'atts') {
+						atts.childNodes.forEach((element, index) => {
+							xml += ' ' + element.children[1].getAttribute("name") + '="' + element.children[1].getAttribute("value") +'"';
+						});
+					}
+
+					xml += '>';
+					html_to_xml(htmlForm.firstElementChild);
+
+					xml += '</' + tagName + '>';
 				}
-				if (atts && atts.getAttribute('class') == 'atts') {
-					atts.childNodes.forEach((element, index) => {
-						xml += ' ' + element.children[1].getAttribute("name") + '="' + element.children[1].getAttribute("value") +'"';
-					});
-				}
-				
-				xml += '>';
-				html_to_xml(htmlForm.firstElementChild);
-				xml += '</' + htmlForm.getAttribute('tagName') + '>';
+
 				if (htmlForm.nextElementSibling) {
 					html_to_xml(htmlForm.nextElementSibling);
 				}
@@ -137,6 +151,16 @@ document.addEventListener("DOMContentLoaded", function(){
 			}
 		}
 		return xml;
+	}
+
+	function getTagName(element) {
+		var tagName = "";
+		if (element.tagName == "DIV"  && element.getAttribute("class") == "field") {
+			tagName = element.querySelector('label[for="' + element.getAttribute('field-id') +'"]').outerText;
+		} else if (element.tagName == "FIELDSET") {
+			tagName = element.querySelector('LEGEND[for="' + element.getAttribute('id') +'"]').outerText;
+		}
+		return tagName;
 	}
 
 	function formatXML(xml, tab) {
