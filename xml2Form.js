@@ -3,6 +3,7 @@ legendAutoGenId = 0;
 html = '';
 attrAutoGenId = 0;
 jsonObject = {};
+xmlString = '';
 
 function addNewFieldSet(tagName, prevElement) {
 	var fieldsetNo = 'fieldsetNo_' +  legendAutoGenId;
@@ -104,31 +105,49 @@ document.addEventListener("DOMContentLoaded", function(){
 	
 	var parser = new DOMParser();
 
-	document.getElementById('submitter1').addEventListener('click', function() {
-		var doc = document.getElementById('xmlDoc').value;
-		var xmlDoc = parser.parseFromString(doc,'text/xml');
-		var xml = xml2Form(xmlDoc);
-		document.getElementById('result').innerHTML = xml;
-	});
+	if (document.getElementById('submitter1')) {
+		document.getElementById('submitter1').addEventListener('click', function() {
+			var doc = document.getElementById('xmlDoc').value;
+			var xmlDoc = parser.parseFromString(doc,'text/xml');
+			var xml = xml2Form(xmlDoc);
+			document.getElementById('result').innerHTML = xml;
+		});
+	}
 
-	document.getElementById('submitter2').addEventListener('click', function() {
-		var htmlForm = document.getElementById('result').firstElementChild;
-		//debugger;
-		var xml = form2Xml(htmlForm);
+	if (document.getElementById('submitter2')) {
+		document.getElementById('submitter2').addEventListener('click', function () {
+			var htmlForm = document.getElementById('result').firstElementChild;
+			//debugger;
+			var xml = form2Xml(htmlForm);
 
-		var xmlDoc = parser.parseFromString(xml,'text/xml');
-		var xmlText = new XMLSerializer().serializeToString(xmlDoc);
-		document.getElementById('xmlResult').value = formatXML(xmlText, '  ');
-	});
+			var xmlDoc = parser.parseFromString(xml, 'text/xml');
+			var xmlText = new XMLSerializer().serializeToString(xmlDoc);
+			document.getElementById('xmlResult').value = formatXML(xmlText, '  ');
+		});
+	}
 
-	document.getElementById('xmlToJson').addEventListener('click', function() {
-		var doc = document.getElementById('xmlDoc').value;
-		var xmlDoc = parser.parseFromString(doc,'text/xml');
-		var json = xml2json(xmlDoc);
+	if (document.getElementById('xmlToJson')) {
+		document.getElementById('xmlToJson').addEventListener('click', function() {
+			var doc = document.getElementById('xmlDoc').value;
+			var xmlDoc = parser.parseFromString(doc,'text/xml');
+			var json = xml2json(xmlDoc);
 
-		//var result = combineSameKeyToArray(json)
-		document.getElementById('jsonResult').value = JSON.stringify(JSON.parse(json));
-	});
+			//var result = combineSameKeyToArray(json)
+			document.getElementById('jsonResult').value = JSON.stringify(JSON.parse(json));
+		});
+	}
+
+	if (document.getElementById('jsonToXmlBtn')) {
+		document.getElementById('jsonToXmlBtn').addEventListener('click', function() {
+			var doc = document.getElementById('jsonInput').value;
+			var jsonObject = JSON.parse(doc);
+			var xml = json2xml(jsonObject);
+
+			//var result = combineSameKeyToArray(json)
+			document.getElementById('xmlResult').value = xmlString;
+		});
+	}
+
 
 	function xml2Form(xmlDoc) {
 		clear();
@@ -194,35 +213,121 @@ document.addEventListener("DOMContentLoaded", function(){
 			xml_to_json(xmlDoc.documentElement);
 		}
 
+		function handleArrayChild(xmlElem, isLastChild) {
+
+			if (xmlElem.firstElementChild) {
+					jsonObject += ' { ';
+					xml_to_json(xmlElem.firstElementChild);
+					if (!isLastChild) {
+						if (jsonObject && jsonObject.charAt(jsonObject.length - 1) != ',') {
+							jsonObject += ',';
+						}
+
+					}
+			} else {
+				jsonObject += generateJsonArrayElement(xmlElem);
+			}
+		}
+
 		function xml_to_json(xmlElem) {
 			if (!xmlElem) {
 
 				return;
 			}
 			if (xmlElem.firstElementChild) {
-				jsonObject += '"' + xmlElem.nodeName + '": { ';
-
-				xml_to_json(xmlElem.firstElementChild);
-				if (xmlElem.nextElementSibling) {
-					xml_to_json(xmlElem.nextElementSibling);
-				} else {
+				if (isArray(xmlElem)) {
+					jsonObject += '"' + xmlElem.nodeName + '": [ ';
+					var index = 0;
+					for (let child in xmlElem.children) {
+						debugger;
+						var isLastChild = index == xmlElem.children.length - 1;
+						handleArrayChild(xmlElem.children[child], isLastChild);
+						if (index == xmlElem.children.length - 1) {
+							break;
+						}
+						index++;
+					}
+					jsonObject += ']';
 					jsonObject += '}';
-					//return;
-				}
-			} else {
-				jsonObject += generateJsonField(xmlElem);
-				if (xmlElem.nextElementSibling) {
-					xml_to_json(xmlElem.nextElementSibling);
-				} else {
-					jsonObject += '}';
-					if (xmlElem.parentElement.nextElementSibling) {
+					if (xmlElem.parentElement && xmlElem.parentElement.nextElementSibling) {
 						jsonObject += ',';
 					}
-					return;
+
+				} else {
+					jsonObject += '"' + xmlElem.nodeName + '": { ';
+					xml_to_json(xmlElem.firstElementChild);
+					if (xmlElem.nextElementSibling) {
+
+						xml_to_json(xmlElem.nextElementSibling);
+
+					} else {
+						jsonObject += '}';
+					}
 				}
+
+			} else {
+
+					jsonObject += generateJsonField(xmlElem);
+					if (xmlElem.nextElementSibling) {
+						xml_to_json(xmlElem.nextElementSibling);
+					} else {
+						jsonObject += '}';
+						if (xmlElem.parentElement && xmlElem.parentElement.nextElementSibling) {
+							jsonObject += ',';
+						}
+						return;
+					}
+
+
 			}
 		}
 		return jsonObject;
+	}
+
+	function json2xml(data) {
+
+		json_to_xml('jsonRoot', data);
+		function json_to_xml(key, data) {
+			if (Array.isArray(data)) {
+				xmlString += '<' + key + '>'
+				debugger;
+				for (const property in data) {
+					json_to_xml('item', data[property]);
+				}
+				xmlString += '</' + key + '>'
+			} else if (data instanceof Object) {
+				xmlString +='<' + key + '>'
+				debugger;
+				for (const property in data) {
+					json_to_xml(property, data[property]);
+				}
+				xmlString +='</' + key + '>'
+			} else {
+				xmlString +='<' + key + '>' + data + '</' + key + '>'
+				console.log(data);
+			}
+		}
+
+	}
+
+	function generateJsonArrayElement(xmlElem) {
+		var fieldValue = xmlElem.innerHTML;
+		var fieldName = xmlElem.nodeName;
+		var input = '';
+		if (xmlElem.nextElementSibling) {
+			input = '"' + fieldValue + '",'
+		} else {
+			input = '"' + fieldValue + '"'
+		}
+		return input;
+	}
+
+	function isArray(xmlElem) {
+		var childList = xmlElem.children;
+		if (childList && childList.length > 1 && childList[0].nodeName == childList[childList.length-1].nodeName) {
+			return true;
+		}
+		return false;
 	}
 
 	function generateJsonField(xmlElem) {
@@ -236,20 +341,6 @@ document.addEventListener("DOMContentLoaded", function(){
 		}
 
 		return input;
-	}
-
-	function combineSameKeyToArray(jsonObj) {
-		let jsonData = JSON.parse(jsonObj);
-
-
-		for (let key in jsonData) {
-			// If the key is not in the combinedData object, create a new entry with an array containing the current value
-
-			if (jsonData[key]) {
-				console.log(jsonData[key]);
-				combineSameKeyToArray(JSON.stringify(jsonData[key]))
-			}
-		}
 	}
 
 	function generateInput(xmlElem) {
