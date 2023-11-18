@@ -1,6 +1,8 @@
 autoGenId = 0;
 legendAutoGenId = 0;
 html = '';
+attrAutoGenId = 0;
+jsonObject = {};
 
 function addNewFieldSet(tagName, prevElement) {
 	var fieldsetNo = 'fieldsetNo_' +  legendAutoGenId;
@@ -9,12 +11,16 @@ function addNewFieldSet(tagName, prevElement) {
 	newElement.setAttribute("tagName", tagName);
 	newElement.setAttribute("id", fieldsetNo);
 	newElement.setAttribute("class", "fieldset");
-	newElement.innerHTML = '<legend for="'+ fieldsetNo +'" style="font-weight: bold">' + tagName + '</legend>' +
-		'<div>' +
-		'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) nested set</button>' +
-		'<button onclick="addField(\'' + fieldsetNo +'\')">(+) field</button>' +
-		'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) attribute</button>' +
-		'<button onClick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button>' +
+	newElement.innerHTML = '<legend for="'+ fieldsetNo +'" style="font-weight: bold"><span>' + tagName + '</span>' +
+	'<div>' +
+	'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) set</button>' +
+	'<button onclick="addField(\'' + fieldsetNo +'\')">(+) field</button>' +
+	'<button onclick="addFieldSetAttribute(\'' + fieldsetNo +'\')">(+) attr</button>' +
+	'<button onClick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button>' +
+	'</div>'+
+	'</legend>' +
+
+		'<div class="atts" fieldset-id="'+ fieldsetNo +'">' +
 		'</div>';
 	document.getElementById(prevElement).appendChild(newElement);
 	legendAutoGenId += 1;
@@ -28,6 +34,16 @@ function clear() {
 
 function removeField(elementId) {
 	var element = document.querySelector("div[field-id="+elementId+"]");
+	element.remove();
+}
+
+function removeAttrFieldSet(elementId) {
+	var element = document.querySelector("div[attrFieldSet-id="+elementId+"]");
+	element.remove();
+}
+
+function removeAttrField(elementId) {
+	var element = document.querySelector("div[attrField-id="+elementId+"]");
 	element.remove();
 }
 
@@ -45,13 +61,40 @@ function addField(currentFieldSetId) {
 	newElement.innerHTML =
 		'<label for="' + inputId + '" style="display: inline-block; width: 150px">' + inputName + '</label>'
 		+ '<input id="' + inputId + '" style="width:200px" name="' + inputName + '" type="text" value="' + inputValue + '"></input>'
-		+'<button onClick="removeField(\''+inputId+'\')">-</button>';
+		+'<div class="fieldBtnGroup">'
+		+ '<button onclick="addFieldAttribute(\'' + inputId +'\')">(+) attr</button>'
+		+'<button onClick="removeField(\''+inputId+'\')">-</button>'
+	+'</div>'
+	+'<div class="atts" field-id="'+ inputId +'"></div>';
 
 	document.getElementById(currentFieldSetId).appendChild(newElement);
 }
 
-function addAttribute(currentFieldSetId) {
+function addFieldSetAttribute(currentFieldSetId) {
+	var element = document.querySelector("div[fieldset-id="+currentFieldSetId+"]");
+	var newElement = document.createElement("div");
+	newElement.setAttribute("class", "attrFieldSet");
+	newElement.setAttribute("attrFieldSet-id", currentFieldSetId );
+	newElement.innerHTML =
+	'<label contenteditable="true" for="attrFieldSet_' + attrAutoGenId + '" style="padding-right: 10px">changeMe</label>'+
+	'<input name="attrFieldSet_' + attrAutoGenId + '" value=""></input>' +
+	'<button onClick="removeAttrFieldSet(\''+currentFieldSetId+'\')">-</button>';
+	element.appendChild(newElement);
+	attrAutoGenId++;
+}
 
+function addFieldAttribute(currentFieldId) {
+	var element = document.querySelector("div[field-id="+currentFieldId+"][class=atts]");
+
+	var newElement = document.createElement("div");
+	newElement.setAttribute("class", "attrField");
+	newElement.setAttribute("attrField-id", currentFieldId );
+	newElement.innerHTML =
+		'<label contenteditable="true" for="attrField_' + attrAutoGenId + '" style="padding-right: 10px">changeMe</label>'+
+		'<input name="attrField_' + attrAutoGenId + '" value=""></input>' +
+		'<button onClick="removeAttrField(\''+currentFieldId+'\')">-</button>';
+	element.appendChild(newElement);
+	attrAutoGenId++;
 }
 
 function insertAfter(referenceNode, newNode) {
@@ -78,6 +121,15 @@ document.addEventListener("DOMContentLoaded", function(){
 		document.getElementById('xmlResult').value = formatXML(xmlText, '  ');
 	});
 
+	document.getElementById('xmlToJson').addEventListener('click', function() {
+		var doc = document.getElementById('xmlDoc').value;
+		var xmlDoc = parser.parseFromString(doc,'text/xml');
+		var json = xml2json(xmlDoc);
+
+		//var result = combineSameKeyToArray(json)
+		document.getElementById('jsonResult').value = JSON.stringify(JSON.parse(json));
+	});
+
 	function xml2Form(xmlDoc) {
 		clear();
 
@@ -93,27 +145,33 @@ document.addEventListener("DOMContentLoaded", function(){
 			if (xmlElem.firstElementChild) {
 				var fieldsetNo = 'fieldsetNo_' +  legendAutoGenId;
 				html += '<fieldset id="' + fieldsetNo + '" contenteditable="true" style="margin: 10px 20px 10px 20px" tagName="' + xmlElem.nodeName + '">' +
-					'<legend for="'+ fieldsetNo +'" style="font-weight: bold">' + xmlElem.nodeName + '</legend>';
+					'<legend for="'+ fieldsetNo +'" style="font-weight: bold"><span>' + xmlElem.nodeName+'</span>';
 
-				html += '<div>' +
-					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) nested set</button>' +
+				html += '<div style="display: inline-block">' +
+					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) set</button>' +
 					'<button onclick="addField(\'' + fieldsetNo +'\')">(+) field</button>' +
-					'<button onclick="addNewFieldSet(\'' + "changeMyName\'" +", \'" + fieldsetNo +'\')">(+) attribute</button>' +
+					'<button onclick="addFieldSetAttribute(\'' + fieldsetNo +'\')">(+) attr</button>' +
 					'<button onClick="document.getElementById(\''+fieldsetNo+'\').remove();">-</button>' +
-					'</div>';
+					'</div>'+
+					'</legend>';
+
+
 
 				var atts = xmlElem.attributes;
+				html += '<div class="atts" fieldset-id="'+ fieldsetNo +'">'
 				if (atts.length > 0) {
-					html += '<div class="atts">'
+
 					for (var att, i = 0, atts, n = atts.length; i < n; i++){
 						att = atts[i];
-						html += '<div class="attrField">'
+						html += '<div class="attrFieldSet" attrFieldSet-id="'+ fieldsetNo +'">'
 						html += '<label contenteditable="true" for="' + att.nodeName + '" style="padding-right: 10px">' + att.nodeName + '</label>';
 						html += '<input name="' + att.nodeName + '" value="'+ att.nodeValue + '"></input>';
+						html += '<button onClick="removeAttrFieldSet(\''+fieldsetNo+'\')">-</button>';
 						html += '</div>';
 					}
-					html += '</div>'
+
 				}
+				html += '</div>'
 				xml_to_html(xmlElem.firstElementChild);
 				html += '</fieldset>';
 				if (xmlElem.nextElementSibling) {
@@ -129,6 +187,71 @@ document.addEventListener("DOMContentLoaded", function(){
 		return html;
 	}
 
+	function xml2json(xmlDoc) {
+		clear();
+		jsonObject = '{'
+		if (xmlDoc.documentElement.childNodes.length > 0) {
+			xml_to_json(xmlDoc.documentElement);
+		}
+
+		function xml_to_json(xmlElem) {
+			if (!xmlElem) {
+
+				return;
+			}
+			if (xmlElem.firstElementChild) {
+				jsonObject += '"' + xmlElem.nodeName + '": { ';
+
+				xml_to_json(xmlElem.firstElementChild);
+				if (xmlElem.nextElementSibling) {
+					xml_to_json(xmlElem.nextElementSibling);
+				} else {
+					jsonObject += '}';
+					//return;
+				}
+			} else {
+				jsonObject += generateJsonField(xmlElem);
+				if (xmlElem.nextElementSibling) {
+					xml_to_json(xmlElem.nextElementSibling);
+				} else {
+					jsonObject += '}';
+					if (xmlElem.parentElement.nextElementSibling) {
+						jsonObject += ',';
+					}
+					return;
+				}
+			}
+		}
+		return jsonObject;
+	}
+
+	function generateJsonField(xmlElem) {
+		var fieldValue = xmlElem.innerHTML;
+		var fieldName = xmlElem.nodeName;
+		var input = '';
+		if (xmlElem.nextElementSibling) {
+			input = '"' + fieldName + '":"' + fieldValue + '",'
+		} else {
+			input = '"' + fieldName + '":"' + fieldValue + '"'
+		}
+
+		return input;
+	}
+
+	function combineSameKeyToArray(jsonObj) {
+		let jsonData = JSON.parse(jsonObj);
+
+
+		for (let key in jsonData) {
+			// If the key is not in the combinedData object, create a new entry with an array containing the current value
+
+			if (jsonData[key]) {
+				console.log(jsonData[key]);
+				combineSameKeyToArray(JSON.stringify(jsonData[key]))
+			}
+		}
+	}
+
 	function generateInput(xmlElem) {
 		var inputValue = xmlElem.innerHTML;
 		var inputName = xmlElem.nodeName;
@@ -137,22 +260,25 @@ document.addEventListener("DOMContentLoaded", function(){
 		var input = '<div class="field" field-id="'+ inputId +'" tagName="' + inputName + '">'
 					+ '<label for="' + inputId + '" style="display: inline-block; width: 150px">' + inputName + '</label>'
 					+ '<input id="' + inputId + '" style="width:200px" name="' + inputName + '" type="text" value="' + inputValue + '"></input>'
-					+'<button onClick="removeField(\''+inputId+'\')">-</button>'
-					+'</div>';
+			+'<div class="fieldBtnGroup">'
+			+ '<button onclick="addFieldAttribute(\'' + inputId +'\')">(+) attr</button>'
+			+'<button onClick="removeField(\''+inputId+'\')">-</button>'
+			+'</div>';
 
 		var atts = xmlElem.attributes;
+		var attrhtml = '<div class="atts" field-id="'+ inputId +'">'
 		if (atts.length > 0) {
-			var attrhtml = '<div class="fieldAtts">'
 			for (var att, i = 0, atts, n = atts.length; i < n; i++){
 				att = atts[i];
-				attrhtml += '<div class="attrField">'
+				attrhtml += '<div class="attrField" attrField-id="'+inputId+'">'
 				attrhtml += '<label contenteditable="true" for="' + att.nodeName + '" style="padding-right: 10px">' + att.nodeName + '</label>';
 				attrhtml += '<input name="' + att.nodeName + '" value="'+ att.nodeValue + '"></input>';
+				attrhtml += '<button onClick="removeAttrField(\''+inputId+'\')">-</button>';
 				attrhtml += '</div>';
 			}
-			attrhtml += '</div>'
-			input += attrhtml;
 		}
+		attrhtml += '</div>'
+		input += attrhtml;
 		input += '</div>';
 		return input;
 	}
@@ -181,12 +307,15 @@ document.addEventListener("DOMContentLoaded", function(){
 					// get attributes list input of current element
 					var atts = null;
 
-					if (htmlForm.firstElementChild) {
+					if (htmlForm.tagName == "FIELDSET" && htmlForm.firstElementChild) {
 						atts = htmlForm.firstElementChild.nextElementSibling;
+					} else if (htmlForm.childNodes[3] && htmlForm.childNodes[3].getAttribute("class") == ("atts")) {
+						atts = htmlForm.childNodes[3];
 					}
 					if (atts && atts.getAttribute('class') == 'atts') {
 						atts.childNodes.forEach((element, index) => {
-							xml += ' ' + element.children[1].getAttribute("name") + '="' + element.children[1].getAttribute("value") +'"';
+							xml += ' ' + element.children[0].outerText + '="' + element.children[1].getAttribute("value") +'"';
+							console.log(element.children[1].nodeName);
 						});
 					}
 
@@ -218,7 +347,7 @@ document.addEventListener("DOMContentLoaded", function(){
 		if (element.tagName == "DIV"  && element.getAttribute("class") == "field") {
 			tagName = element.querySelector('label[for="' + element.getAttribute('field-id') +'"]').outerText;
 		} else if (element.tagName == "FIELDSET") {
-			tagName = element.querySelector('LEGEND[for="' + element.getAttribute('id') +'"]').outerText;
+			tagName = element.querySelectorAll('LEGEND[for="' + element.getAttribute('id') +'"] > span')[0].outerText;
 		}
 		return tagName;
 	}

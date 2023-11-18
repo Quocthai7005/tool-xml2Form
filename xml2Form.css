@@ -12,10 +12,16 @@ legend {
 	padding: 3px 6px 5px 6px;
 }
 
-.atts {
+.attrFieldSet {
 	padding: 1px;
 	border-radius: 5px;
-	background: #edeaea;
+	background: #ffe3e3;
+}
+
+.attrField {
+	padding: 1px;
+	border-radius: 5px;
+	background: #eeeeee;
 }
 
 .field, .attrField {
@@ -35,4 +41,7 @@ button {
 
 .container-fluid {
 	font-size: 14px !important;
+}
+.fieldBtnGroup {
+	display: inline-block;
 }
