@@ -1,3 +1,10 @@
+body {
+	font: 18px Quicksand-Regular !important;
+}
+p {
+	font-size: 16px;
+}
+
 fieldset {
 	font: 14px Verdana, Geneva, sans-serif;
 	border: thin solid #595959;

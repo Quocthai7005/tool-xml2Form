@@ -147,6 +147,23 @@ document.addEventListener("DOMContentLoaded", function(){
 			document.getElementById('xmlResult').value = xmlString;
 		});
 	}
+	if (document.getElementById('json2formbtn')) {
+		document.getElementById('json2formbtn').addEventListener('click', function() {
+			var doc = document.getElementById('jsonInput').value;
+			json2Form(doc);
+			document.getElementById('jsonFormResult').innerHTML = html;
+		});
+	}
+
+	if (document.getElementById('form2jsonbtn')) {
+		document.getElementById('form2jsonbtn').addEventListener('click', function () {
+			var htmlForm = document.getElementById('jsonFormResult').firstElementChild;
+			//debugger;
+			var jsonString = form2Json(htmlForm);
+			document.getElementById('jsonFromFormResult').value = jsonString;
+		});
+	}
+
 
 
 	function xml2Form(xmlDoc) {
@@ -209,7 +226,10 @@ document.addEventListener("DOMContentLoaded", function(){
 	function xml2json(xmlDoc) {
 		clear();
 		jsonObject = '{'
-		if (xmlDoc.documentElement.childNodes.length > 0) {
+		if (xmlDoc.documentElement.nodeName == 'jsonRoot' && xmlDoc.documentElement.childNodes.length > 0) {
+
+			xml_to_json(xmlDoc.documentElement.firstElementChild);
+		} else if (xmlDoc.documentElement.nodeName != 'jsonRoot' && xmlDoc.documentElement.childNodes.length > 0) {
 			xml_to_json(xmlDoc.documentElement);
 		}
 
@@ -284,6 +304,12 @@ document.addEventListener("DOMContentLoaded", function(){
 		return jsonObject;
 	}
 
+	function form2Json(htmlForm) {
+		var xmlString = form2Xml(htmlForm);
+		var xmlDoc = parser.parseFromString(xmlString,'text/xml');
+		return xml2json(xmlDoc);
+	}
+
 	function json2xml(data) {
 
 		json_to_xml('jsonRoot', data);
@@ -307,7 +333,13 @@ document.addEventListener("DOMContentLoaded", function(){
 				console.log(data);
 			}
 		}
+	}
 
+	function json2Form(jsonString) {
+		var jsonObject = JSON.parse(jsonString);
+		json2xml(jsonObject);
+		var xmlDoc = parser.parseFromString(xmlString,'text/xml');
+		xml2Form(xmlDoc);
 	}
 
 	function generateJsonArrayElement(xmlElem) {
